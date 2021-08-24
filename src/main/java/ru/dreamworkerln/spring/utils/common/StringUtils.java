@@ -20,6 +20,12 @@ public class StringUtils extends org.springframework.util.StringUtils {
         return org.springframework.util.StringUtils.hasLength(org.springframework.util.StringUtils.trimWhitespace(s));
     }
 
+    /**
+     * Format string replacing {} to actual params as slf4j log.debug() do
+     * @param format string to format
+     * @param params actual params replacement
+     * @return
+     */
     public static String formatMsg(String format, Object... params) {
         return MessageFormatter.arrayFormat(format, params).getMessage();
     }
