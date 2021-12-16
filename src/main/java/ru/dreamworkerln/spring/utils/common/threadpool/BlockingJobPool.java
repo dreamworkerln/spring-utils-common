@@ -33,7 +33,22 @@ public class BlockingJobPool<A, R> {
 
     private final AtomicInteger activeThreads = new AtomicInteger(0);
 
-    public BlockingJobPool(Integer poolSize, Duration timeout, Consumer<JobResult<A, R>> callback) {
+    private final static String POOL_NAME = "BlockingJobPool";
+
+    public BlockingJobPool(Integer poolSize,
+                           Duration timeout,
+                           Consumer<JobResult<A, R>> callback) {
+
+        this(poolSize, timeout, callback, POOL_NAME);
+    }
+
+
+
+
+    public BlockingJobPool(Integer poolSize,
+                           Duration timeout,
+                           Consumer<JobResult<A, R>> callback,
+                           String poolName) {
 
         this.timeout = timeout;
 
@@ -53,7 +68,7 @@ public class BlockingJobPool<A, R> {
 
         final CustomizableThreadFactory threadFactory = new CustomizableThreadFactory();
         threadFactory.setDaemon(true);
-        threadFactory.setThreadNamePrefix("BlockingJobPool-");
+        threadFactory.setThreadNamePrefix(poolName + "-");
 
 
 
