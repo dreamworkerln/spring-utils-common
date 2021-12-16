@@ -13,7 +13,7 @@ public class MapMirrorMerge<K,V> {
     /**
      * Three step mirror merge source Map with update Map
      * <br>
-     * 1. Add new streams from source to target
+     * 1. Add new items from source to target
      * <br>
      * 2. Update altered values in target (if changed)
      * <br>
@@ -32,7 +32,7 @@ public class MapMirrorMerge<K,V> {
         // step 1-2
         for (Map.Entry<K, V> updEntry : update.entrySet()) {
 
-            // 1. Add new streams from update to target
+            // 1. Add new items from update to target
             if(!target.containsKey(updEntry.getKey())) {
                 target.put(updEntry.getKey(), updEntry.getValue());
             }
@@ -67,7 +67,7 @@ public class MapMirrorMerge<K,V> {
             V srcValue = srcEntry.getValue();
             V tarValue = target.get(key);
 
-            // 1. Add new streams from source to target
+            // 1. Add new items from source to target
             if(!target.containsKey(key)) {
                 target.put(key, srcValue);
                 onAdd.accept(key, srcValue);
