@@ -11,26 +11,32 @@ public abstract class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K,V> {
 
     protected ConcurrentMap<K,V> map;
 
+    @Override
     public Set<Map.Entry<K, V>> entrySet() {
         return map.entrySet();
     }
 
+    @Override
     public boolean containsKey(Object key) {
         return map.containsKey(key);
     }
 
+    @Override
     public V get(Object key) {
         return map.get(key);
     }
 
+    @Override
     public Collection<V> values() {
         return map.values();
     }
 
+    @Override
     public V put(K key, V value) {
         return map.put(key, value);
     }
 
+    @Override
     public V remove(Object key) {
         return map.remove(key);
     }
@@ -39,22 +45,26 @@ public abstract class ConcurrentMapWrapper<K,V> implements ConcurrentMap<K,V> {
         map.keySet().removeAll(collection);
     }
 
+    @Override
     public void putAll(Map<? extends K, ? extends V> otherMap) {
         map.putAll(otherMap);
     }
+
 
     public boolean removeIf(Predicate<Map.Entry<K,V>> filter) {
         return map.entrySet().removeIf(filter);
     }
 
-
+    @Override
     public int size() {
         return map.size();
     }
 
+
     public ConcurrentMap<K, V> getMap() {
         return map;
     }
+
 
     public Stream<Map.Entry<K, V>> getStream() {
         return map.entrySet().stream();

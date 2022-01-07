@@ -5,7 +5,7 @@ import org.slf4j.helpers.MessageFormatter;
 /**
  * Extends org.springframework.util.StringUtils to apache.commons.lang3.StringUtils.isBlank
  */
-public class StringUtils extends org.springframework.util.StringUtils {
+public class StringUtilsMy extends org.springframework.util.StringUtils {
 
     /**
      * Checks if a String is null or empty ("") or whitespace only.

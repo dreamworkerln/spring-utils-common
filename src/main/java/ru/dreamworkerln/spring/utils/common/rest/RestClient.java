@@ -8,12 +8,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.Base64;
 import java.util.Collections;
-
-import static ru.dreamworkerln.spring.utils.common.StringUtils.isBlank;
 
 @Slf4j
 public class RestClient {
@@ -44,6 +40,24 @@ public class RestClient {
         HttpEntity<String> entity = new HttpEntity<>(body, headers);
         return restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
     }
+
+
+
+
+
+    public ResponseEntity<String> put(String url, String body) {
+        HttpEntity<String> entity = new HttpEntity<>(body, headers);
+        return restTemplate.exchange(url, HttpMethod.PUT, entity, String.class);
+    }
+
+    public ResponseEntity<String> put(String url, String body, HttpHeaders headers) {
+        HttpEntity<String> entity = new HttpEntity<>(body, headers);
+        return restTemplate.exchange(url, HttpMethod.PUT, entity, String.class);
+    }
+
+
+
+
 
 
     public ResponseEntity<byte[]> download(String url) {
