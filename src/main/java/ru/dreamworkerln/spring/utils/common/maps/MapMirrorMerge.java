@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 public class MapMirrorMerge<K,V> {
 
     /**
-     * Three step mirror merge source Map with update Map
+     * Three-step mirror merge source Map with target Map
      * <br>
      * 1. Add new items from source to target
      * <br>
