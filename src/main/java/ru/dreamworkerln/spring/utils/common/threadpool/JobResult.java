@@ -2,15 +2,28 @@ package ru.dreamworkerln.spring.utils.common.threadpool;
 
 import lombok.Data;
 
+
+/**
+ * Job result
+ * @param <A> Argument with whom job was called (identity purposes)
+ * @param <R> Result
+ */
 @Data
 public class JobResult<A, R> {
 
-    // argument with whom job was called (identity purposes)
+    /**
+     *  Argument with whom job was called (identity purposes)
+     */
     private A argument;
-    // JOb result (null if job exceptionally failed)
+
+    /**
+     * Job result (null if job exceptionally failed)
+     */
     private R result;
 
-    // Job fail exception (null if was executed successfully)
+    /**
+     * Job fail exception (null if was executed successfully)
+     */
     private Throwable exception;
 
     public JobResult() {}
@@ -28,7 +41,7 @@ public class JobResult<A, R> {
     public String toString() {
         String res = result.toString();
         if (exception != null) {
-            res += ", exception= " + exception.toString();
+            res += ", exception= " + exception;
         }
         return res;
     }

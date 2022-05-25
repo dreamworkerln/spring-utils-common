@@ -16,6 +16,9 @@ public class StringUtilsEx extends org.springframework.util.StringUtils {
         return !org.springframework.util.StringUtils.hasLength(org.springframework.util.StringUtils.trimWhitespace(s));
     }
 
+    /**
+     * Inversion of isBlank
+     */
     public static boolean notBlank(String s) {
         return org.springframework.util.StringUtils.hasLength(org.springframework.util.StringUtils.trimWhitespace(s));
     }

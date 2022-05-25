@@ -21,20 +21,30 @@ import java.util.function.Function;
 
 /**
  * Base job pool class
+ * <br>
+ * Will block calling thread on adding job if queue was overflowed
+ * <br>
+ * (RejectedExecutionHandler -> CallerRunsPolicy)
  */
 @Slf4j
 public class BlockingJobPool<A, R> {
 
     private final ThreadPoolExecutor threadPool;
+
     private final Duration timeout;
 
-    // On each job done handler
+    // On job complete handler
     private final Consumer<JobResult<A, R>> callback;
 
-    private final AtomicInteger activeThreads = new AtomicInteger(0);
-
+    // default thread pool name
     private final static String POOL_NAME = "BlockingJobPool";
 
+    /**
+     * Constructor
+     * @param poolSize thread pool size
+     * @param timeout default job execution timeout
+     * @param callback default callback for each job
+     */
     public BlockingJobPool(Integer poolSize,
                            Duration timeout,
                            Consumer<JobResult<A, R>> callback) {
@@ -43,8 +53,13 @@ public class BlockingJobPool<A, R> {
     }
 
 
-
-
+    /**
+     * Constructor
+     * @param poolSize thread pool size
+     * @param timeout default job execution timeout
+     * @param callback default callback for each job
+     * @param poolName pool name
+     */
     public BlockingJobPool(Integer poolSize,
                            Duration timeout,
                            Consumer<JobResult<A, R>> callback,
@@ -61,9 +76,6 @@ public class BlockingJobPool<A, R> {
             callback = empty -> {};
         }
 
-//        if (callback == null) {
-//            throw new IllegalArgumentException("ERROR: callback == null");
-//        }
         this.callback = callback;
 
         final CustomizableThreadFactory threadFactory = new CustomizableThreadFactory();
@@ -84,15 +96,23 @@ public class BlockingJobPool<A, R> {
     }
 
     /**
-     *
-     * @param argument - argument to identify task)
-     * @param function - method to execute asynchronously with given identifier as argument
+     * Asynchronously start job, on job complete will call default BlockingJobPool.callback
+     * @param argument identifier to identify task
+     * @param function method to execute asynchronously (job)
 
      */
     public void add(A argument, Function<A, JobResult<A,R>> function) {
+        add(argument, function, callback);
+    }
 
 
-        //System.out.println("callback: + " + Thread.currentThread().getName());
+    /**
+     * Asynchronously start job, on job complete will call custom callback
+     * @param argument identifier to identify task
+     * @param function method to execute asynchronously (job)
+     * @param callback custom consumer to be executed after job finished
+     */
+    public void add(A argument, Function<A, JobResult<A,R>> function, Consumer<JobResult<A,R>> callbackCustom) {
         CompletableTask
             .supplyAsync(() -> function.apply(argument), threadPool)
             // выставляем timeout, начинает отсчитываться при вызове supplyAsync(),
@@ -107,7 +127,7 @@ public class BlockingJobPool<A, R> {
             )
             // Оповещаем о завершении каждой задачи
             .thenAcceptAsync(
-                callback
+                callbackCustom
             )
             .exceptionallyAsync(throwable -> {
                     log.error("blockingJobPool.callback have been executed with error: ", throwable);
@@ -118,26 +138,24 @@ public class BlockingJobPool<A, R> {
 
 
     /**
-     * Synchronously complete job (with applied timeout)
-     * @param argument - argument to identify task)
-     * @param function - method to execute asynchronously with given identifier as argument
-     * @return JobResult<A,R>
+     * Synchronously complete job with default threadPoolExecutor timeout
+     * @param argument identifier to identify task
+     * @param function method to execute synchronously
+     * @return JobResult<A,R> result with identifier or execution exception (if had any)
      */
-    public JobResult<A,R> execTimeout (A argument, Function<A, JobResult<A,R>> function) throws ExecutionException, InterruptedException {
+    public JobResult<A,R> execTimeout(A argument, Function<A, JobResult<A,R>> function) throws ExecutionException, InterruptedException {
 
         return execTimeout(argument, function, timeout);
     }
 
 
     /**
-     * Synchronously complete job (with applied timeout)
-     * @param argument - argument to identify task)
-     * @param function - method to execute asynchronously with given identifier as argument
+     * Synchronously complete job with customizable timeout
+     * @param argument - identifier to identify task
+     * @param function - method to execute synchronously
      * @param timeout - specified timeout
-     * @return JobResult<A,R>
+     * @return JobResult<A,R> result with identifier or execution exception (if had any)
      */
-
-
     public JobResult<A,R> execTimeout(A argument, Function<A, JobResult<A,R>> function, Duration timeout) throws ExecutionException, InterruptedException {
 
         return
@@ -157,7 +175,8 @@ public class BlockingJobPool<A, R> {
 
 
     /**
-     * Add batch jobs blocking
+     * Start blocking batch jobs.
+     * <br>
      * Will block calling thread till all promises have been completed
      @return List<JobResult>
      */
@@ -167,46 +186,40 @@ public class BlockingJobPool<A, R> {
         return Promises.all(promiseList).get();
     }
 
+
     /**
-     * Add batch jobs async
-     * <br>No wait, no results
+     * Start batch jobs asynchronously, no wait, no results
      */
     public void batchAsync(List<BatchItem<A, R>> batchList) {
         batchJobs(batchList);
     }
 
+
     /**
-     * Add batch jobs async
-     * Will async call callback when all promises have been completed
-     @return List<JobResult>
+     * Start batch jobs asynchronously, call callback when all jobs have been completed
+     * @param batchList jobs to do
+     * @param callback call when all jobs done
      */
-    public void batchAsync(List<BatchItem<A, R>> batchList, Consumer<List<JobResult<A,R>>> callback) throws ExecutionException, InterruptedException {
+    public void batchAsync(List<BatchItem<A, R>> batchList, Consumer<List<JobResult<A,R>>> callback) {
 
         List<Promise<JobResult<A,R>>> promiseList = batchJobs(batchList);
         Promises.all(promiseList).thenAccept(callback);
     }
 
-    public void shutdown() throws InterruptedException {
+    // --------------------------------------------------------------------
+
+    public boolean shutdown() throws InterruptedException {
         System.out.println("Awaiting termination ...");
         threadPool.shutdown();
-        threadPool.awaitTermination(10000, TimeUnit.MILLISECONDS);
+        return threadPool.awaitTermination(10000, TimeUnit.MILLISECONDS);
     }
-
-
-
-
-    public void awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        threadPool.awaitTermination(timeout, unit);
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+        return threadPool.awaitTermination(timeout, unit);
     }
 
     public boolean isTerminated()  {
         return  threadPool.isTerminated();
     }
-
-    public int getActiveCount() {
-        return activeThreads.get();
-    }
-
 
 
     // ========================================================================
@@ -248,6 +261,30 @@ public class BlockingJobPool<A, R> {
             })
 
 
+    public void add(A argument, Function<A, JobResult<A,R>> function) {
 
+        //System.out.println("callback: + " + Thread.currentThread().getName());
+        CompletableTask
+            .supplyAsync(() -> function.apply(argument), threadPool)
+            // выставляем timeout, начинает отсчитываться при вызове supplyAsync(),
+            // даже если задача попала в ThreadPoolExecutor.workQueue
+            .orTimeout(timeout)
+            // generate JobResult on exceptional execution
+            .exceptionallyAsync(throwable -> {
+                    JobResult<A,R> r = new JobResult<>(argument);
+                    r.setException(throwable);
+                    return r;
+                }
+            )
+            // Оповещаем о завершении каждой задачи
+            .thenAcceptAsync(
+                callback
+            )
+            .exceptionallyAsync(throwable -> {
+                    log.error("blockingJobPool.callback have been executed with error: ", throwable);
+                    return null;
+                }
+            );
 
- */
+    }
+    */
